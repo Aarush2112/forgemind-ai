@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 6
+names: ['base', 'circle_plate', 'maximum', 'minimum', 'number', 'tip']
+
+roboflow:
+  workspace: aarush-gupta-1ctcv
+  project: pressure-gauge-pfjl2-ptdgn
+  version: dataset
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/aarush-gupta-1ctcv/pressure-gauge-pfjl2-ptdgn/dataset/dataset

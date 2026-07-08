@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 7
+names: ['HE_1', 'HE_12', 'HE_2', 'HE_3', 'HE_4', 'HE_5', 'HE_6']
+
+roboflow:
+  workspace: aarush-gupta-1ctcv
+  project: heat-exchanger-detection-plvd7
+  version: dataset
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/aarush-gupta-1ctcv/heat-exchanger-detection-plvd7/dataset/dataset

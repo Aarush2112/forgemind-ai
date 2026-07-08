@@ -2,14 +2,24 @@
 pinecone_store.py — Pinecone + LlamaIndex vector store logic.
 
 PDF loading strategy:
-  1. Try docling with EasyOCR (handles scanned + text PDFs)
-  2. Fall back to PyMuPDF for text-based PDFs if docling fails
+  1. Try PyMuPDF for text-based PDFs
+  2. Fall back to docling with EasyOCR for scanned PDFs if PyMuPDF finds no text
+
+Vector lifecycle:
+  - index_documents(): append-only (Computer Vision and incremental uploads)
+  - build_index(): rebuilds uploaded-document vectors only; preserves CV vectors
+  - clear_index(): deletes all vectors (explicit user action)
 """
 
+import json
+import logging
 import os
 import re
 import unicodedata
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+logger = logging.getLogger(__name__)
 
 from pinecone import Pinecone, ServerlessSpec
 from llama_index.core import (
@@ -25,13 +35,16 @@ PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX   = os.getenv("PINECONE_INDEX", "rag-documents")
 TMP_DIR          = "/tmp/rag_docs"
 MAX_NON_LATIN    = 0.25
+UPLOADED_SOURCE_TYPE = "uploaded_document"
+CV_SOURCE_TYPES = {"computer_vision", "full_drawing"}
+MAX_METADATA_STR_LEN = 2000
 
 # ── Pinecone client ────────────────────────────────────────────────────────────
 def _get_pinecone_index():
     pc = Pinecone(api_key=PINECONE_API_KEY)
     existing = [i.name for i in pc.list_indexes()]
     if PINECONE_INDEX not in existing:
-        print(f"[pinecone_store] Creating index '{PINECONE_INDEX}'...")
+        logger.info("Creating index '%s'...", PINECONE_INDEX)
         pc.create_index(
             name=PINECONE_INDEX,
             dimension=384,
@@ -73,11 +86,11 @@ def _load_pdf_docling(fpath: str) -> list[Document]:
     # Try PyMuPDF first for text-based PDFs
     pymupdf_docs = _load_pdf_pymupdf(fpath)
     if pymupdf_docs:
-        print(f"[pinecone_store] ✅ '{fname}' → {len(pymupdf_docs)} chunk(s) via PyMuPDF")
+        logger.info("'%s' → %d chunk(s) via PyMuPDF", fname, len(pymupdf_docs))
         return pymupdf_docs
 
     # No text found — scanned PDF, use docling + EasyOCR
-    print(f"[pinecone_store] No text in '{fname}', trying docling + EasyOCR…")
+    logger.info("No text in '%s', trying docling + EasyOCR", fname)
 
     # Fix SSL for macOS Python 3.14
     try:
@@ -115,16 +128,17 @@ def _load_pdf_docling(fpath: str) -> list[Document]:
         full_text = doc_obj.export_to_markdown()
 
         if not full_text.strip():
-            print(f"[pinecone_store] ⚠️  docling returned empty text for '{fname}'")
+            logger.warning("docling returned empty text for '%s'", fname)
             return []
 
         pages = _split_into_pages(doc_obj, full_text, fname, fpath)
-        print(f"[pinecone_store] ✅ '{fname}' → {len(pages)} chunk(s) via docling+EasyOCR")
+        logger.info("'%s' → %d chunk(s) via docling+EasyOCR", fname, len(pages))
         return pages
 
     except Exception as e:
-        print(f"[pinecone_store] docling failed on '{fname}': {e}")
+        logger.warning("docling failed on '%s': %s", fname, e)
         return []
+
 
 def _split_into_pages(doc_obj, full_text: str, fname: str, fpath: str) -> list[Document]:
     """Split docling output into page-level chunks."""
@@ -203,15 +217,58 @@ def _load_pdf_pymupdf(fpath: str) -> list[Document]:
     return docs
 
 
+# ── Metadata helpers ───────────────────────────────────────────────────────────
+def _sanitize_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Pinecone metadata must be scalar values (str, int, float, bool) or lists of str.
+    Nested structures are JSON-encoded; long strings are truncated.
+    """
+    clean: Dict[str, Any] = {}
+    for key, value in (metadata or {}).items():
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            clean[key] = value
+        elif isinstance(value, (int, float)):
+            clean[key] = value
+        elif isinstance(value, str):
+            clean[key] = value[:MAX_METADATA_STR_LEN]
+        elif isinstance(value, (list, tuple)):
+            clean[key] = [
+                str(item)[:MAX_METADATA_STR_LEN]
+                for item in value
+                if item is not None
+            ]
+        elif isinstance(value, dict):
+            encoded = json.dumps(value, default=str)
+            clean[key] = encoded[:MAX_METADATA_STR_LEN]
+        else:
+            clean[key] = str(value)[:MAX_METADATA_STR_LEN]
+    return clean
+
+
+def _delete_uploaded_document_vectors(pinecone_index) -> None:
+    """Remove only uploaded-document vectors; preserve Computer Vision vectors."""
+    try:
+        pinecone_index.delete(
+            filter={"source_type": {"$eq": UPLOADED_SOURCE_TYPE}}
+        )
+        logger.info(
+            "Cleared uploaded-document vectors from '%s' (CV vectors preserved).",
+            PINECONE_INDEX,
+        )
+    except Exception as exc:
+        logger.warning(
+            "Could not filter-delete uploaded vectors (%s); index may be empty.",
+            exc,
+        )
+
+
 # ── Build index ────────────────────────────────────────────────────────────────
 def build_index(documents_dir: str = TMP_DIR) -> VectorStoreIndex:
     pinecone_index = _get_pinecone_index()
 
-    try:
-        pinecone_index.delete(delete_all=True)
-        print(f"[pinecone_store] Cleared existing vectors from '{PINECONE_INDEX}'.")
-    except Exception:
-        print(f"[pinecone_store] Index is empty — skipping clear step.")
+    _delete_uploaded_document_vectors(pinecone_index)
 
     vector_store    = PineconeVectorStore(pinecone_index=pinecone_index)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -232,14 +289,14 @@ def build_index(documents_dir: str = TMP_DIR) -> VectorStoreIndex:
                 raw_docs = _load_pdf_docling(fpath)
                 if not raw_docs:
                     failed_files.append(fname)
-                    print(f"[pinecone_store] ⚠️  '{fname}' — no text extracted.")
+                    logger.warning("'%s' — no text extracted.", fname)
                     continue
             else:
                 raw_docs = SimpleDirectoryReader(
                     input_files=[fpath], filename_as_id=True,
                 ).load_data()
         except Exception as e:
-            print(f"[pinecone_store] ERROR loading '{fname}': {e}")
+            logger.error("ERROR loading '%s': %s", fname, e)
             skipped += 1
             continue
 
@@ -251,10 +308,14 @@ def build_index(documents_dir: str = TMP_DIR) -> VectorStoreIndex:
             if cleaned is None:
                 skipped += 1
                 continue
-            clean_docs.append(Document(text=cleaned, metadata=doc.metadata))
+            meta = dict(doc.metadata or {})
+            meta["source_type"] = UPLOADED_SOURCE_TYPE
+            clean_docs.append(
+                Document(text=cleaned, metadata=_sanitize_metadata(meta))
+            )
 
     if skipped:
-        print(f"[pinecone_store] Skipped {skipped} corrupt/empty chunks.")
+        logger.info("Skipped %d corrupt/empty chunks.", skipped)
 
     if not clean_docs:
         msg = "No usable text could be extracted from the uploaded documents."
@@ -262,9 +323,8 @@ def build_index(documents_dir: str = TMP_DIR) -> VectorStoreIndex:
             msg += "\nFailed files:\n  " + "\n  ".join(failed_files)
         raise ValueError(msg)
 
-    print(f"\n[pinecone_store] ✅ Indexing {len(clean_docs)} chunks into Pinecone...")
-    print(f"[pinecone_store] Preview: {clean_docs[0].text[:200]}")
-    print("─" * 60)
+    logger.info("Indexing %d chunks into Pinecone...", len(clean_docs))
+    logger.debug("Preview: %s", clean_docs[0].text[:200])
 
     return VectorStoreIndex.from_documents(clean_docs, storage_context=storage_context)
 
@@ -280,7 +340,7 @@ def load_index() -> VectorStoreIndex | None:
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
     except Exception as e:
-        print(f"[pinecone_store] Could not load index: {e}")
+        logger.warning("Could not load index: %s", e)
         return None
 
 
@@ -295,6 +355,42 @@ def get_chunk_count() -> int:
 def clear_index():
     try:
         _get_pinecone_index().delete(delete_all=True)
-        print(f"[pinecone_store] Cleared all vectors from '{PINECONE_INDEX}'.")
+        logger.info("Cleared all vectors from '%s'.", PINECONE_INDEX)
     except Exception as e:
-        print(f"[pinecone_store] Could not clear index: {e}")
+        logger.warning("Could not clear index: %s", e)
+
+
+# ── New function: index arbitrary documents ───────────────────────────────────
+def index_documents(documents: List[Tuple[str, Dict[str, Any]]]) -> None:
+    """
+    Index a list of (text, metadata) tuples into the Pinecone index.
+    Does not delete existing vectors.
+
+    Args:
+        documents: List of tuples (text, metadata) where text is the string to index
+                  and metadata is a dictionary of metadata to attach.
+    """
+    if not documents:
+        return
+
+    pinecone_index = _get_pinecone_index()
+    vector_store    = PineconeVectorStore(pinecone_index=pinecone_index)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+    docs_to_index = []
+    for text, metadata in documents:
+        cleaned = _clean_doc_text(text)
+        if cleaned is not None and cleaned.strip():
+            meta = _sanitize_metadata(metadata)
+            if "source_type" not in meta:
+                meta["source_type"] = "computer_vision"
+            doc = Document(text=cleaned, metadata=meta)
+            docs_to_index.append(doc)
+
+    if not docs_to_index:
+        logger.warning("No valid documents to index after cleaning.")
+        return
+
+    logger.info("Indexing %d documents from arbitrary source...", len(docs_to_index))
+    VectorStoreIndex.from_documents(docs_to_index, storage_context=storage_context)
+    logger.info("Finished indexing arbitrary documents.")

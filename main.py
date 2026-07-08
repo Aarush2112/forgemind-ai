@@ -24,6 +24,10 @@ from llama_index.core import Settings
 from llama_index.llms.groq import Groq
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from pinecone_store import build_index, load_index, get_chunk_count, clear_index, TMP_DIR
+from computer_vision.api.detect import router as detect_router
+
+# Constants
+UPLOADED_SOURCE_TYPE = "uploaded_document"
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 GROQ_API_KEY        = os.getenv("GROQ_API_KEY")
@@ -52,7 +56,11 @@ app.add_middleware(
 
 # ── Static files (app.js, style.css) ──────────────────────────────────────────
 # Place index.html in templates/, app.js and style.css in static/
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# ── Static files (annotated images) ───────────────────────────────────────────
+# Serve annotated images from computer_vision/results at /results
+from computer_vision.config import RESULTS_DIR
+app.mount("/results", StaticFiles(directory=str(RESULTS_DIR)), name="results")
 
 # ── In-memory state (replaces Streamlit session state) ─────────────────────────
 state = {
@@ -113,10 +121,12 @@ def format_sources(source_nodes) -> list:
     seen      = {}
     for node in source_nodes:
         meta  = node.node.metadata or {}
-        fname = meta.get("file_name") or meta.get("filename") or ""
+        fname = meta.get("file_name") or meta.get("filename") or meta.get("image_name") or ""
         if not fname or fname.strip() == "" or fname == "None":
             continue
-        if indexed:
+        source_type = meta.get("source_type")
+        # Only filter by uploaded files if the source type is uploaded document and we have indexed files
+        if source_type == UPLOADED_SOURCE_TYPE and indexed:
             base = os.path.basename(fname)
             if fname not in indexed and base not in indexed:
                 continue
@@ -242,10 +252,6 @@ def build_standalone_query(user_input: str, history: list) -> str:
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    html_path = Path(__file__).parent / "templates" / "index.html"
-    return HTMLResponse(content=html_path.read_text())
 
 @app.get("/status")
 async def status():
@@ -494,3 +500,11 @@ async def history():
 async def clear_history():
     state["chat_history"] = []
     return {"success": True}
+
+
+# Include computer vision router
+app.include_router(
+    detect_router,
+    prefix="",
+    tags=["Computer Vision"],
+)

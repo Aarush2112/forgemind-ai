@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['0', '1', '2']
+
+roboflow:
+  workspace: aarush-gupta-1ctcv
+  project: pump-ldb99-lub0p
+  version: dataset
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/aarush-gupta-1ctcv/pump-ldb99-lub0p/dataset/dataset
