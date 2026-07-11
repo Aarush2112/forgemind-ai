@@ -622,18 +622,47 @@ uploadBtn?.addEventListener("click",()=>{
 });
 
 imageInput?.addEventListener("change",(e)=>{
+    const files = [...e.target.files];
+    if (!files || files.length === 0) return;
 
-    const file=e.target.files[0];
+    const docs = [];
+    let imageFile = null;
+    const allowedDocs = ["pdf","txt","md","docx","csv","xlsx","json","pptx"];
 
-    if(!file)return;
+    for (const file of files) {
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (allowedDocs.includes(ext)) {
+            docs.push(file);
+        } else if (file.type.startsWith("image/")) {
+            imageFile = file;
+        } else {
+            showToast(`${file.name}: unsupported format`, "error");
+        }
+    }
 
-    selectedImage=file;
+    if (docs.length > 0) {
+        addFiles(docs);
+        showToast(`Added ${docs.length} document(s) to sidebar queue`, "success");
+    }
 
-    showPreview(file);
+    if (imageFile) {
+        selectedImage = imageFile;
+        showPreview(imageFile);
+        detectImage(imageFile);
+    }
 
-    detectImage(file);
-
+    imageInput.value = "";
 });
+
+function toggleSidebar() {
+    const layout = document.querySelector(".layout");
+    const sidebar = document.querySelector(".sidebar");
+    if (window.innerWidth <= 768) {
+        sidebar.classList.toggle("open");
+    } else {
+        layout.classList.toggle("sidebar-collapsed");
+    }
+}
 
 
 // ----------------------------------------------------
