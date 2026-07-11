@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadStatus();
   setupDropZone();
   autoResizeTextarea();
+  if (window.lucide) lucide.createIcons();
 });
 
 // ── Status ─────────────────────────────────────────────────────────────────────
@@ -22,6 +23,7 @@ async function loadStatus() {
 
 function updateStatus(data) {
   const badge    = document.getElementById("dbStatus");
+  const statusText = document.getElementById("dbStatusText");
   const clearBtn = document.getElementById("clearBtn");
   const indexed  = document.getElementById("indexedSection");
   const fileDiv  = document.getElementById("indexedFiles");
@@ -29,19 +31,27 @@ function updateStatus(data) {
 
   if (data.chunk_count > 0) {
     badge.className  = "status-badge success";
-    badge.textContent = `💾 Pinecone: ${data.chunk_count} vectors stored`;
+    if (statusText) statusText.textContent = `Pinecone: ${data.chunk_count} vectors stored`;
     clearBtn.style.display = "block";
   } else {
     badge.className  = "status-badge empty";
-    badge.textContent = "💾 Pinecone: empty";
+    if (statusText) statusText.textContent = "Pinecone: empty";
     clearBtn.style.display = "none";
   }
 
   if (data.indexed_files && data.indexed_files.length > 0) {
     indexed.style.display = "block";
-    fileDiv.innerHTML = data.indexed_files
-      .map(f => `<div class="indexed-file">• ${f}</div>`)
-      .join("");
+    fileDiv.innerHTML = data.indexed_files.map(f => `
+      <div class="indexed-file-card">
+        <div class="file-info-main">
+          <svg class="file-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div class="file-name-container">
+            <span class="file-name">${escapeHtml(f)}</span>
+            <span class="file-status-badge">✓ Indexed</span>
+          </div>
+        </div>
+      </div>
+    `).join("");
   } else {
     indexed.style.display = "none";
   }
@@ -91,10 +101,19 @@ function addFiles(files) {
 
 function renderFileList() {
   const list = document.getElementById("fileList");
+  const fmt = n => n < 1024 ? n + ' B' : n < 1048576 ? (n/1024).toFixed(1) + ' KB' : (n/1048576).toFixed(1) + ' MB';
   list.innerHTML = pendingFiles.map((f, i) => `
-    <div class="file-item">
-      <span>📄 ${f.name}</span>
-      <span class="remove" onclick="removeFile(${i})">✕</span>
+    <div class="file-item-card">
+      <div class="file-details">
+        <svg class="file-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div class="file-meta">
+          <span class="file-name">${escapeHtml(f.name)}</span>
+          <span class="file-size">${fmt(f.size)}</span>
+        </div>
+      </div>
+      <button class="btn-remove-file" onclick="removeFile(${i})" title="Remove">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
   `).join("");
 }
@@ -130,7 +149,7 @@ async function buildIndex() {
     if (!upData.saved || upData.saved.length === 0) {
       showToast("No files were uploaded.", "error");
       btn.disabled = false;
-      btn.textContent = "🔨 Build Index";
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="15" x2="22" y2="15"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="15" x2="4" y2="15"/></svg> Build Index';
       return;
     }
 
@@ -142,7 +161,7 @@ async function buildIndex() {
     if (!buildRes.ok) {
       showToast(buildData.detail || "Build failed.", "error");
       btn.disabled = false;
-      btn.textContent = "🔨 Build Index";
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="15" x2="22" y2="15"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="15" x2="4" y2="15"/></svg> Build Index';
       return;
     }
 
@@ -159,7 +178,7 @@ async function buildIndex() {
   }
 
   btn.disabled = false;
-  btn.textContent = "🔨 Build Index";
+  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="15" x2="22" y2="15"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="15" x2="4" y2="15"/></svg> Build Index';
 }
 
 // ── Clear database ──────────────────────────────────────────────────────────────
@@ -170,7 +189,8 @@ async function clearDatabase() {
     updateStatus({ chunk_count: 0, indexed_files: [], ready: false });
     document.getElementById("messages").innerHTML = `
       <div class="empty-state" id="emptyState">
-        <p>👈 Upload documents and click <strong>Build Index</strong> to get started.</p>
+        <div class="empty-state-welcome">Good to see you 👋</div>
+        <p class="empty-state-desc">Upload your documents in the sidebar and click <strong>Build Index</strong> to start chatting with your knowledge base.</p>
       </div>`;
     showToast("Database cleared.", "success");
   } catch (e) {
@@ -293,6 +313,7 @@ function updateBubbleText(id, text) {
   const el = document.getElementById(id);
   if (!el) return;
   const bubble = el.querySelector(".bubble");
+  bubble.classList.add('stream-cursor');
   bubble.innerHTML = formatText(text);
   scrollToBottom();
 }
@@ -306,28 +327,85 @@ function updateBubble(id, text, sources) {
 
   if (sources && sources.length > 0) {
     html += `<div class="sources">
-      <div class="sources-title">📎 Sources</div>
+      <div class="sources-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Sources
+      </div>
+      <div class="sources-grid">
       ${sources.map(s => `
-        <div class="source-item">
-          📄 <strong>${escapeHtml(s.file)}</strong>
-          ${s.page ? `— p. ${s.page}` : ""}
-          <span class="score">(relevance: ${s.score})</span>
+        <div class="source-item-card">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div class="source-file-details">
+            <span class="source-file-name">${escapeHtml(s.file)}</span>
+            <span class="source-file-page">${s.page ? `Page ${s.page}` : 'Document'}</span>
+          </div>
+          <span class="source-score-badge">${s.score}</span>
         </div>
       `).join("")}
+      </div>
     </div>`;
   }
 
+  bubble.classList.remove('stream-cursor');
   bubble.innerHTML = html;
+
+  // Inject copy button
+  const actions = document.createElement('div');
+  actions.className = 'bubble-actions';
+  actions.innerHTML = `
+    <button class="copy-btn" onclick="copyBubble(this, ${JSON.stringify(text)})">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy
+    </button>`;
+  bubble.appendChild(actions);
+
   scrollToBottom();
 }
 
 function formatText(text) {
-  return escapeHtml(text)
-    .replace(/\n\n/g, "</p><p>")
-    .replace(/\n/g, "<br>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/^/, "<p>")
-    .replace(/$/, "</p>");
+  // Process code fences first (``` ... ``` blocks)
+  let html = String(text).replace(/```([\s\S]*?)```/g, (_, code) => {
+    return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+  });
+
+  // Inline code (`...`)
+  html = html.replace(/`([^`]+)`/g, (_, code) => `<code>${escapeHtml(code)}</code>`);
+
+  // Escape remaining HTML in non-code segments
+  html = html.split('<pre>').map((segment, i) => {
+    if (i === 0) {
+      return segment
+        .replace(/&(?!amp;|lt;|gt;|quot;)/g, '&amp;')
+        .replace(/(?<!<code>.*?)<(?!\/?(pre|code|strong|em|p|br|ul|ol|li|h[1-6])[ >])/g, '&lt;');
+    }
+    return segment;
+  }).join('<pre>');
+
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Bold and italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Unordered lists
+  html = html.replace(/^[-*] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+
+  // Ordered lists
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+  // Horizontal rules
+  html = html.replace(/^---+$/gm, '<hr>');
+
+  // Paragraphs from double line breaks
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+
+  return `<p>${html}</p>`;
 }
 
 function escapeHtml(text) {
@@ -352,12 +430,47 @@ function autoResizeTextarea() {
 }
 
 // ── Toast ───────────────────────────────────────────────────────────────────────
+const TOAST_ICONS = {
+  success: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  error:   `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+  info:    `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+};
+
 function showToast(msg, type = "info") {
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  toast.textContent = msg;
+  toast.innerHTML = `${TOAST_ICONS[type] || ''}<span>${escapeHtml(msg)}</span>`;
   document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+    toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// ── Suggestion Chips ────────────────────────────────────────────────────────────
+function sendSuggestion(btn) {
+  const input = document.getElementById('userInput');
+  if (!input) return;
+  input.value = btn.textContent.trim();
+  input.focus();
+  // Auto-resize
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  sendMessage();
+}
+
+// ── Copy Bubble ──────────────────────────────────────────────────────────────────
+function copyBubble(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+    }, 2000);
+  }).catch(() => showToast('Copy failed', 'error'));
 }
 
 /* ==========================================================

@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RAG Chatbot — Groq + LlamaIndex</title>
+  <title>ForgeMind AI — Knowledge Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../static/style.css" />
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <div class="layout">
@@ -12,37 +16,72 @@
     <!-- ── Sidebar ── -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <span class="logo">🤖</span>
-        <h2>RAG Chatbot</h2>
+        <div class="brand">
+          <span class="logo-emoji">🤖</span>
+          <div class="brand-text">
+            <h2>AI Knowledge Assistant</h2>
+            <span class="subtitle">Powered by Groq + Llama + Pinecone</span>
+          </div>
+        </div>
+        <button id="themeToggle" class="theme-toggle-btn" title="Theme Settings" style="display: none;">
+          <span id="themeToggleIcon">☀️</span>
+        </button>
       </div>
 
       <div class="sidebar-section">
-        <label class="section-label">📂 Upload Documents</label>
-        <p class="hint">PDF, TXT, MD, DOCX, CSV, XLSX, JSON · max 20MB</p>
-        <div class="drop-zone" id="dropZone">
-          <input type="file" id="fileInput" multiple
-                accept=".pdf,.txt,.md,.docx,.csv,.xlsx,.json,.pptx" hidden />
-          <p>Drop files here or <span class="link" onclick="document.getElementById('fileInput').click()">browse</span></p>
+        <label class="section-label"><i data-lucide="folder-open"></i> Upload Documents</label>
+        <div class="upload-card">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" multiple
+                  accept=".pdf,.txt,.md,.docx,.csv,.xlsx,.json,.pptx" hidden />
+            <div class="drop-zone-icon">
+              <i data-lucide="upload-cloud"></i>
+            </div>
+            <p class="drop-zone-text">Drag & drop files here</p>
+            <span class="btn-browse" onclick="document.getElementById('fileInput').click()">Browse Files</span>
+          </div>
+          <div class="formats-hint">
+            <span>Supported: PDF, DOCX, TXT, CSV, XLSX, JSON</span>
+            <span class="max-size">Max size: 20MB</span>
+          </div>
         </div>
         <div id="fileList" class="file-list"></div>
-        <button class="btn btn-primary" id="buildBtn" onclick="buildIndex()">
-          🔨 Build Index
+        <button class="btn btn-primary btn-build" id="buildBtn" onclick="buildIndex()">
+          <i data-lucide="cpu"></i> Build Index
         </button>
       </div>
 
       <div class="divider"></div>
 
       <div class="sidebar-section" id="statusSection">
-        <div id="dbStatus" class="status-badge info">💾 Pinecone: checking...</div>
-        <button class="btn btn-danger" id="clearBtn" onclick="clearDatabase()" style="display:none">
-          🗑️ Clear Database
-        </button>
+        <label class="section-label"><i data-lucide="server"></i> Database Status</label>
+        <div class="status-card">
+          <div id="dbStatus" class="status-badge info">
+            <span class="status-dot"></span>
+            <span id="dbStatusText">Pinecone: checking...</span>
+          </div>
+
+          <!-- Simulating Progress Bar during Indexing -->
+          <div id="indexProgressBarContainer" class="progress-bar-container" style="display: none;">
+            <div class="progress-label">
+              <span class="progress-status-text">Embedding...</span>
+              <span id="progressPercent" class="progress-percent">0%</span>
+            </div>
+            <div class="progress-track">
+              <div id="indexProgressBar" class="progress-fill"></div>
+            </div>
+          </div>
+
+          <button class="btn btn-danger" id="clearBtn" onclick="clearDatabase()" style="display:none">
+            <i data-lucide="trash-2"></i> Clear Database
+          </button>
+        </div>
       </div>
 
       <div class="divider"></div>
 
       <div class="sidebar-section" id="indexedSection" style="display:none">
-        <label class="section-label">📄 Indexed Files</label>
+        <label class="section-label"><i data-lucide="database"></i> Indexed Files</label>
         <div id="indexedFiles"></div>
       </div>
     </aside>
@@ -50,12 +89,51 @@
     <!-- ── Main chat area ── -->
     <main class="chat-area">
       <div class="chat-header">
-        <h1>🤖 RAG Chatbot <span class="subtitle">— Powered by Groq + LlamaIndex + Pinecone</span></h1>
+        <div>
+          <h1>💬 Knowledge Assistant</h1>
+          <p class="subtitle">RAG-powered AI · Groq + LlamaIndex + Pinecone</p>
+        </div>
+        <div class="model-pill-container">
+          <span class="model-pill accent">Groq</span>
+          <span class="model-pill accent2">Llama 3.1</span>
+          <span class="model-pill">Pinecone</span>
+        </div>
       </div>
 
       <div class="messages" id="messages">
         <div class="empty-state" id="emptyState">
-          <p>👈 Upload documents and click <strong>Build Index</strong> to get started.</p>
+          <div class="empty-state-welcome">Hello, Researcher 👋</div>
+          <p class="empty-state-desc">Upload your documents in the sidebar, then build your index to start asking questions about your knowledge base.</p>
+          <div class="capabilities-grid">
+            <div class="capability-card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <h4>Semantic Search</h4>
+              <p>Pull answers from your docs using vector similarity search.</p>
+            </div>
+            <div class="capability-card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <h4>Multi-format Docs</h4>
+              <p>PDF, DOCX, TXT, CSV, XLSX and more — all supported.</p>
+            </div>
+            <div class="capability-card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <h4>Source Citations</h4>
+              <p>Every answer links back to the exact page and document.</p>
+            </div>
+            <div class="capability-card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <h4>Vision Detection</h4>
+              <p>Capture or upload images for object detection analysis.</p>
+            </div>
+          </div>
+          <!-- ── Suggestion Chips ── -->
+          <div class="suggestion-chips-container">
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">Summarize the key findings</button>
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">What are the main topics covered?</button>
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">List the most important dates</button>
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">Compare sections in this document</button>
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">Explain this to me simply</button>
+          </div>
         </div>
       </div>
 
@@ -90,13 +168,23 @@
         </div>
 
         <!-- Input Row -->
-
-        <div class="input-row">
-            <button id="cameraBtn" class="tool-btn" title="Camera">📷</button>
-            <button id="uploadImageBtn" class="tool-btn" title="Upload Image">🖼️</button>
-            <input type="file" id="imageInput" accept="image/*" hidden/>
-            <textarea id="userInput" placeholder="Ask a question..." rows="1" onkeydown="handleKey(event)"></textarea>
-            <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
+        <div class="input-container-box">
+          <div class="input-row">
+            <div class="actions-group">
+              <button id="cameraBtn" class="tool-btn" title="Open Camera">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </button>
+              <button id="uploadImageBtn" class="tool-btn" title="Upload Image">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </button>
+              <input type="file" id="imageInput" accept="image/*" hidden/>
+            </div>
+            <textarea id="userInput" placeholder="Ask a question about your documents…" rows="1" onkeydown="handleKey(event)"></textarea>
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <p class="input-footer-hint"><kbd>Enter</kbd> to send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> for new line</p>
         </div>
       </div>
 
