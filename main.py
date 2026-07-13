@@ -20,10 +20,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ── Railway‑friendly configuration – overrides for file system paths ──
+BASE_DATA_DIR = Path(os.getenv("DATA_DIR", "./tmp")).resolve()
+BASE_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+UPLOAD_DIR   = BASE_DATA_DIR / "uploads"
+RESULTS_DIR  = BASE_DATA_DIR / "results"
+TMP_DIR      = BASE_DATA_DIR / "tmp"
+
+for _d in (UPLOAD_DIR, RESULTS_DIR, TMP_DIR):
+    _d.mkdir(parents=True, exist_ok=True)
+
 from llama_index.core import Settings
 from llama_index.llms.groq import Groq
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from pinecone_store import build_index, load_index, get_chunk_count, clear_index, TMP_DIR
+from pinecone_store import build_index, load_index, get_chunk_count, clear_index
 from computer_vision.api.detect import router as detect_router
 
 # Constants
@@ -59,7 +70,7 @@ app.add_middleware(
 
 # ── Static files (annotated images) ───────────────────────────────────────────
 # Serve annotated images from computer_vision/results at /results
-from computer_vision.config import RESULTS_DIR
+from main import RESULTS_DIR
 app.mount("/results", StaticFiles(directory=str(RESULTS_DIR)), name="results")
 
 # ── In-memory state (replaces Streamlit session state) ─────────────────────────

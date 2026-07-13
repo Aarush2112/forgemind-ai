@@ -33,11 +33,16 @@ from llama_index.vector_stores.pinecone import PineconeVectorStore
 # ── Config ─────────────────────────────────────────────────────────────────────
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX   = os.getenv("PINECONE_INDEX", "rag-documents")
-TMP_DIR          = "/tmp/rag_docs"
 MAX_NON_LATIN    = 0.25
 UPLOADED_SOURCE_TYPE = "uploaded_document"
 CV_SOURCE_TYPES = {"computer_vision", "full_drawing"}
 MAX_METADATA_STR_LEN = 2000
+
+def _get_tmp_dir() -> Path:
+    """Return the temporary directory for uploaded files, respecting DATA_DIR env var."""
+    base = Path(os.getenv("DATA_DIR", "./tmp")).resolve()
+    base.mkdir(parents=True, exist_ok=True)
+    return base / "tmp"
 
 # ── Pinecone client ────────────────────────────────────────────────────────────
 def _get_pinecone_index():
@@ -265,7 +270,9 @@ def _delete_uploaded_document_vectors(pinecone_index) -> None:
 
 
 # ── Build index ────────────────────────────────────────────────────────────────
-def build_index(documents_dir: str = TMP_DIR) -> VectorStoreIndex:
+def build_index(documents_dir: str | None = None) -> VectorStoreIndex:
+    if documents_dir is None:
+        documents_dir = str(_get_tmp_dir())
     pinecone_index = _get_pinecone_index()
 
     _delete_uploaded_document_vectors(pinecone_index)

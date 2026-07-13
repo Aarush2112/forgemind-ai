@@ -9,11 +9,17 @@ BASE_DIR = Path(__file__).resolve().parent
 MODELS_DIR = BASE_DIR / "models"
 WEIGHTS_DIR = BASE_DIR / "weights"
 OUTPUT_DIR = BASE_DIR / "outputs"
-RESULTS_DIR = BASE_DIR / "results"
+
+# Import RESULTS_DIR from main to share the same directory with the backend
+from main import RESULTS_DIR
+
+# Ensure the directory exists (also done in main, but safe to repeat)
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
 MODEL_PATH = WEIGHTS_DIR / "best.pt"
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+# RESULTS_DIR.mkdir already done above
 
 # ---------------------------------------------------------
 # Image Settings
