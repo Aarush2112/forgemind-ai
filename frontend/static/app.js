@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ── Status ─────────────────────────────────────────────────────────────────────
 async function loadStatus() {
   try {
-    const res  = await fetch("/status");
+    const res  = await fetch((window.API_BASE_URL || "") + "/status");
     const data = await res.json();
     updateStatus(data);
   } catch (e) {
@@ -139,7 +139,7 @@ async function buildIndex() {
   for (const f of pendingFiles) formData.append("files", f);
 
   try {
-    const upRes  = await fetch("/upload", { method: "POST", body: formData });
+    const upRes  = await fetch((window.API_BASE_URL || "") + "/upload", { method: "POST", body: formData });
     const upData = await upRes.json();
 
     if (upData.errors && upData.errors.length > 0) {
@@ -155,7 +155,7 @@ async function buildIndex() {
 
     btn.innerHTML = '<span class="spinner"></span> Building index...';
 
-    const buildRes  = await fetch("/build", { method: "POST" });
+    const buildRes  = await fetch((window.API_BASE_URL || "") + "/build", { method: "POST" });
     const buildData = await buildRes.json();
 
     if (!buildRes.ok) {
@@ -185,7 +185,7 @@ async function buildIndex() {
 async function clearDatabase() {
   if (!confirm("Clear all indexed documents? This cannot be undone.")) return;
   try {
-    await fetch("/clear", { method: "POST" });
+    await fetch((window.API_BASE_URL || "") + "/clear", { method: "POST" });
     updateStatus({ chunk_count: 0, indexed_files: [], ready: false });
     document.getElementById("messages").innerHTML = `
       <div class="empty-state" id="emptyState">
@@ -230,7 +230,7 @@ async function sendMessage() {
   appendAssistantBubble(assistantId);
 
   try {
-    const res = await fetch("/chat", {
+    const res = await fetch((window.API_BASE_URL || "") + "/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: msg }),
@@ -714,7 +714,7 @@ async function detectImage(file){
 
         showToast("Running AI detection...");
 
-        const response=await fetch("/detect",{
+        const response=await fetch((window.API_BASE_URL || "") + "/detect",{
 
             method:"POST",
 
