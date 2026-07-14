@@ -951,3 +951,213 @@ textarea::placeholder { color: var(--muted); }
     display: none;
   }
 }
+
+/* ── Authentication Loader & Profile ── */
+.auth-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 300ms ease;
+}
+
+.auth-loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.auth-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  border-top-color: var(--accent2);
+  border-radius: 50%;
+  animation: auth-spin 1s linear infinite;
+}
+
+/* Header user avatar & hover dropdown styling */
+.header-avatar-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 12px;
+  border-radius: 50%;
+}
+
+.header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: transform 200ms ease, border-color 200ms ease;
+}
+
+.header-avatar-btn:hover .header-avatar {
+  transform: scale(1.05);
+  border-color: rgba(124, 92, 252, 0.5);
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hover Dropdown Menu */
+.avatar-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 12px;
+  width: 240px;
+  background: #131622;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+  text-align: left;
+  
+  /* Hidden by default, smooth animated entrance */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms cubic-bezier(0.16, 1, 0.3, 1), visibility 200ms;
+}
+
+/* Show on hover */
+.header-avatar-btn:hover .avatar-dropdown,
+.avatar-dropdown:hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Triangle caret pointing to avatar */
+.avatar-dropdown::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 10px;
+  border: 6px solid transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.avatar-dropdown::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 10px;
+  border: 6px solid transparent;
+  border-bottom-color: #131622;
+  margin-bottom: -1px;
+}
+
+.dropdown-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+}
+
+.dropdown-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dropdown-user-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dropdown-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-user-email {
+  font-size: 11px;
+  color: #82869A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 2px 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #E2E8F0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.04);
+  color: #FFFFFF;
+}
+
+.dropdown-item.signout:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.08);
+  color: #EF4444;
+}
+
+.dropdown-item i {
+  width: 14px;
+  height: 14px;
+}

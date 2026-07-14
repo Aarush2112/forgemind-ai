@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up — AI Knowledge Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../static/style.css">
+  <style>
+    /* Styling specific to auth pages to avoid bloating style.css */
+    body {
+      background-color: var(--bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Background blob styling for high-end look */
+    .blob {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent2) 0%, rgba(124, 92, 252, 0) 70%);
+      filter: blur(120px);
+      opacity: 0.15;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .blob-1 {
+      top: -100px;
+      left: -100px;
+      background: radial-gradient(circle, var(--accent) 0%, rgba(255, 79, 139, 0) 70%);
+    }
+    .blob-2 {
+      bottom: -100px;
+      right: -100px;
+    }
+    
+    .auth-wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+    }
+    
+    .auth-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+    
+    .auth-logo .emoji {
+      font-size: 48px;
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .auth-logo h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #A6A8B5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .auth-logo p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    
+    #signup-container {
+      width: 100%;
+      min-height: 400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* Interactive floating animation for logo */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* Loading spinner for initial loading */
+    .spinner-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.05);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Decorative background elements -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  
+  <div class="auth-wrapper">
+    <div class="auth-logo">
+      <span class="emoji">🤖</span>
+      <h1>AI Knowledge Assistant</h1>
+      <p>Create an account to access your document assistant</p>
+    </div>
+    
+    <div id="signup-container">
+      <div class="spinner-container" id="authLoader">
+        <div class="spinner"></div>
+        <p>Loading security module...</p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // API base URL injection helper
+    window.API_BASE_URL = "";
+  </script>
+  <script src="../static/auth-config.js"></script>
+  <script src="../static/auth.js"></script>
+</body>
+</html>

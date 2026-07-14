@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "frontend/templates/index.html",
+      "src": "frontend/templates/**",
       "use": "@vercel/static"
     },
     {
@@ -14,6 +14,14 @@
     {
       "src": "/static/(.*)",
       "dest": "/frontend/static/$1"
+    },
+    {
+      "src": "/signin",
+      "dest": "/frontend/templates/signin.html"
+    },
+    {
+      "src": "/signup",
+      "dest": "/frontend/templates/signup.html"
     },
     {
       "src": "/(.*)",

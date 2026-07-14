@@ -7,11 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../static/style.css" />
+  <link rel="stylesheet" href="../static/style.css?v=3" />
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-  <div class="layout">
+  <!-- Global Loading Screen for Authentication Check -->
+  <div id="loadingScreen" class="auth-loading-screen">
+    <div class="auth-loading-spinner-container">
+      <div class="auth-loading-spinner"></div>
+      <p>Securing session...</p>
+    </div>
+  </div>
+
+  <div class="layout" id="appContainer" style="display: none;">
 
     <!-- ── Sidebar ── -->
     <aside class="sidebar">
@@ -105,6 +113,26 @@
           <span class="model-pill accent">Groq</span>
           <span class="model-pill accent2">Llama 3.1</span>
           <span class="model-pill">Pinecone</span>
+          <div class="header-avatar-btn" id="headerAvatarBtn">
+            <span class="header-avatar" id="headerAvatar">👤</span>
+            <!-- Hover Dropdown Menu -->
+            <div class="avatar-dropdown" id="avatarDropdown">
+              <div class="dropdown-user-info">
+                <span class="dropdown-avatar" id="dropdownAvatar">👤</span>
+                <div class="dropdown-user-details">
+                  <span class="dropdown-user-name" id="dropdownUserName">Loading...</span>
+                  <span class="dropdown-user-email" id="dropdownUserEmail"></span>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" id="manageAccountBtn" title="Manage Account">
+                <i data-lucide="settings"></i> Manage Account
+              </button>
+              <button class="dropdown-item signout" id="signOutBtn" title="Sign Out">
+                <i data-lucide="log-out"></i> Sign Out
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -203,6 +231,8 @@
       // API base URL - set via environment variable VITE_API_BASE_URL in Vercel dashboard
       window.API_BASE_URL = "";
     </script>
+  <script src="../static/auth-config.js"></script>
+  <script src="../static/auth.js"></script>
   <script src="../static/app.js"></script>
 </body>
 </html>
