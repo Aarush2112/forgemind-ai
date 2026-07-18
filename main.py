@@ -11,7 +11,7 @@ import unicodedata
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -66,12 +66,10 @@ app.add_middleware(
 )
 
 # ── Static files (app.js, style.css) ──────────────────────────────────────────
-# Place index.html in templates/, app.js and style.css in static/
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+# NOTE: Frontend is served separately (e.g., via Vercel). No static mounting.
 
 # ── Static files (annotated images) ───────────────────────────────────────────
 # Serve annotated images from computer_vision/results at /results
-from main import RESULTS_DIR
 app.mount("/results", StaticFiles(directory=str(RESULTS_DIR)), name="results")
 
 # ── In-memory state (replaces Streamlit session state) ─────────────────────────
@@ -264,25 +262,12 @@ def build_standalone_query(user_input: str, history: list) -> str:
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    html_path = Path(__file__).parent / "frontend" / "templates" / "index.html"
-    return HTMLResponse(content=html_path.read_text())
-
-@app.get("/signin", response_class=HTMLResponse)
-async def signin():
-    html_path = Path(__file__).parent / "frontend" / "templates" / "signin.html"
-    return HTMLResponse(content=html_path.read_text())
-
-@app.get("/signup", response_class=HTMLResponse)
-async def signup():
-    html_path = Path(__file__).parent / "frontend" / "templates" / "signup.html"
-    return HTMLResponse(content=html_path.read_text())
-
 @app.get("/config")
-async def get_config():
+async def get_config(request: Request):
+    base_url = str(request.base_url).rstrip("/")
     return {
-        "CLERK_PUBLISHABLE_KEY": os.getenv("CLERK_PUBLISHABLE_KEY", "")
+        "CLERK_PUBLISHABLE_KEY": os.getenv("CLERK_PUBLISHABLE_KEY", ""),
+        "API_BASE_URL": base_url
     }
 
 @app.get("/status")

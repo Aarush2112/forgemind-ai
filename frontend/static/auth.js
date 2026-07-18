@@ -11,6 +11,8 @@ async function getPublishableKey() {
     if (res.ok) {
       const data = await res.json();
       if (data.CLERK_PUBLISHABLE_KEY) {
+        // Also set the API base URL for the frontend
+        window.API_BASE_URL = data.API_BASE_URL || "";
         return data.CLERK_PUBLISHABLE_KEY;
       }
     }
