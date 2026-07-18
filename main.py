@@ -264,7 +264,9 @@ def build_standalone_query(user_input: str, history: list) -> str:
 
 @app.get("/config")
 async def get_config(request: Request):
-    base_url = str(request.base_url).rstrip("/")
+    host = request.headers.get("host") or request.url.netloc
+    # Assuming the service is accessed via HTTPS in production
+    base_url = f"https://{host}"
     return {
         "CLERK_PUBLISHABLE_KEY": os.getenv("CLERK_PUBLISHABLE_KEY", ""),
         "API_BASE_URL": base_url
