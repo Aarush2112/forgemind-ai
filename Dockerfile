@@ -26,9 +26,6 @@ COPY --chown=appuser:appuser . .
 COPY --chown=appuser:appuser entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Run as non-root user by default
-USER appuser
-
 # ---- Expose the port Railway will set via $PORT ------------------
 EXPOSE 8080
 
