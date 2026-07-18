@@ -5,7 +5,19 @@
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
-function getPublishableKey() {
+async function getPublishableKey() {
+  try {
+    const res = await fetch((window.API_BASE_URL || "") + "/config");
+    if (res.ok) {
+      const data = await res.json();
+      if (data.CLERK_PUBLISHABLE_KEY) {
+        return data.CLERK_PUBLISHABLE_KEY;
+      }
+    }
+  } catch (err) {
+    console.warn("[auth.js] Error fetching Clerk config from backend:", err);
+  }
+
   if (typeof AuthConfig !== 'undefined' && AuthConfig.CLERK_PUBLISHABLE_KEY) {
     return AuthConfig.CLERK_PUBLISHABLE_KEY;
   }
@@ -122,9 +134,9 @@ function loadClerkScript(publishableKey) {
 // ── Main init ───────────────────────────────────────────────────────────────
 
 async function initAuth() {
-  const publishableKey = getPublishableKey();
+  const publishableKey = await getPublishableKey();
   if (!publishableKey) {
-    showAuthError('Clerk key missing', 'Add your Clerk Publishable Key to <code>frontend/static/auth-config.js</code>.');
+    showAuthError('Clerk key missing', 'Configure CLERK_PUBLISHABLE_KEY on the backend or in <code>frontend/static/auth-config.js</code>.');
     return;
   }
 
