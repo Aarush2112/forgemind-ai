@@ -20,7 +20,7 @@
       position: relative;
       overflow: hidden;
     }
-    
+
     /* Background blob styling for high-end look */
     .blob {
       position: absolute;
@@ -42,7 +42,7 @@
       bottom: -100px;
       right: -100px;
     }
-    
+
     .auth-wrapper {
       position: relative;
       z-index: 10;
@@ -54,7 +54,7 @@
       max-width: 440px;
       padding: 20px;
     }
-    
+
     .auth-logo {
       display: flex;
       flex-direction: column;
@@ -62,12 +62,12 @@
       gap: 8px;
       text-align: center;
     }
-    
+
     .auth-logo .emoji {
       font-size: 48px;
       animation: float 6s ease-in-out infinite;
     }
-    
+
     .auth-logo h1 {
       font-size: 24px;
       font-weight: 700;
@@ -76,12 +76,12 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    
+
     .auth-logo p {
       font-size: 13px;
       color: var(--muted);
     }
-    
+
     #signup-container {
       width: 100%;
       min-height: 400px;
@@ -89,13 +89,13 @@
       justify-content: center;
       align-items: center;
     }
-    
+
     /* Interactive floating animation for logo */
     @keyframes float {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
     }
-    
+
     /* Loading spinner for initial loading */
     .spinner-container {
       display: flex;
@@ -106,7 +106,7 @@
       color: var(--muted);
       font-size: 14px;
     }
-    
+
     .spinner {
       width: 40px;
       height: 40px;
@@ -115,7 +115,7 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -125,14 +125,14 @@
   <!-- Decorative background elements -->
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
-  
+
   <div class="auth-wrapper">
     <div class="auth-logo">
       <span class="emoji">🤖</span>
       <h1>AI Knowledge Assistant</h1>
       <p>Create an account to access your document assistant</p>
     </div>
-    
+
     <div id="signup-container">
       <div class="spinner-container" id="authLoader">
         <div class="spinner"></div>
@@ -140,10 +140,10 @@
       </div>
     </div>
   </div>
-  
+
   <script>
     // API base URL injection helper
-    window.API_BASE_URL = "";
+    window.API_BASE_URL = "https://forgemind-ai-production.up.railway.app";
   </script>
   <script src="../static/auth-config.js"></script>
   <script src="../static/auth.js"></script>

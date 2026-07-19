@@ -6,37 +6,25 @@
 // ── Config ──────────────────────────────────────────────────────────────────
 
 async function getPublishableKey() {
-  console.log("[auth.js] getPublishableKey called");
   const apiBase = window.API_BASE_URL || "";
-  console.log("[auth.js] window.API_BASE_URL =", apiBase);
   const url = apiBase + "/config";
-  console.log("[auth.js] Fetching config from:", url);
   try {
     const res = await fetch(url);
-    console.log("[auth.js] /config response status:", res.status);
     if (res.ok) {
       const data = await res.json();
-      console.log("[auth.js] /config response data:", data);
       if (data.CLERK_PUBLISHABLE_KEY) {
-        console.log("[auth.js] Clerk key found in response:", data.CLERK_PUBLISHABLE_KEY);
         // Also set the API base URL for the frontend
         window.API_BASE_URL = data.API_BASE_URL || "";
         return data.CLERK_PUBLISHABLE_KEY;
-      } else {
-        console.warn("[auth.js] /config response missing CLERK_PUBLISHABLE_KEY");
       }
-    } else {
-      console.warn("[auth.js] /config request not ok:", res.status, res.statusText);
     }
   } catch (err) {
     console.error("[auth.js] Error fetching Clerk config from backend:", err);
   }
 
   if (typeof AuthConfig !== 'undefined' && AuthConfig.CLERK_PUBLISHABLE_KEY) {
-    console.log("[auth.js] Falling back to AuthConfig.CLERK_PUBLISHABLE_KEY:", AuthConfig.CLERK_PUBLISHABLE_KEY);
     return AuthConfig.CLERK_PUBLISHABLE_KEY;
   }
-  console.warn("[auth.js] No Clerk key found (fetch failed and AuthConfig empty)");
   return null;
 }
 
@@ -150,24 +138,19 @@ function loadClerkScript(publishableKey) {
 // ── Main init ───────────────────────────────────────────────────────────────
 
 async function initAuth() {
-  console.log("[auth.js] initAuth started");
   const publishableKey = await getPublishableKey();
-  console.log("[auth.js] getPublishableKey returned:", publishableKey);
   if (!publishableKey) {
     showAuthError('Clerk key missing', 'Configure CLERK_PUBLISHABLE_KEY on the backend or in <code>frontend/static/auth-config.js</code>.');
     return;
   }
 
   try {
-    console.log("[auth.js] Loading Clerk SDK");
     await loadClerkScript(publishableKey);
-    console.log("[auth.js] Clerk SDK loaded");
 
     // Initialize window.Clerk using the official options pattern
     await window.Clerk.load({
       appearance: clerkAppearance
     });
-    console.log("[auth.js] Clerk.load completed");
     route(window.Clerk);
   } catch (err) {
     console.error('[auth.js] Clerk init error:', err);
@@ -175,7 +158,7 @@ async function initAuth() {
   }
 }
 
-// ── Routing ─────────────────────────────────────────────────────────────────
+// ── Routing ────────────────────────────────────────────────────────────────
 
 function route(clerk) {
   const page  = currentPage();
@@ -264,7 +247,7 @@ function revealDashboard(user) {
   }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function hideSpinner() {
   const el = document.getElementById('authLoader');
@@ -293,6 +276,6 @@ function showAuthError(title, detail) {
     </div>`;
 }
 
-// ── Boot ─────────────────────────────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', initAuth);
